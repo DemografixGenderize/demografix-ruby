@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Verify tag matches gem version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          gem_version="$(ruby -Ilib -e 'require "demografix/version"; print Demografix::VERSION')"
+          echo "Tag version:  ${tag_version}"
+          echo "Gem version:  ${gem_version}"
+          if [ "${tag_version}" != "${gem_version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match gem version ${gem_version}"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: bundle exec rspec
+
+      - name: Build and publish gem to RubyGems
+        uses: rubygems/release-gem@v1
