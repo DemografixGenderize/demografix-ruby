@@ -3,12 +3,12 @@
 # Summarize the demographic mix of a list of names.
 #
 # Run with: ruby examples/demographic_mix.rb
-# Set DEMOGRAFIX_API_KEY to use an API key (the free per-IP tier runs without).
+# Set DEMOGRAFIX_API_KEY to your API key. One key works across all three services.
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "demografix"
 
-client = Demografix::Client.new(api_key: ENV["DEMOGRAFIX_API_KEY"])
+client = Demografix::Client.new(api_key: ENV.fetch("DEMOGRAFIX_API_KEY"))
 
 names = %w[michael matthew jane emily peter lois]
 

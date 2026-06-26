@@ -21,11 +21,15 @@ module Demografix
     MAX_BATCH = 10
     DEFAULT_TIMEOUT = 10
 
-    # @param api_key [String, nil] optional. When omitted, requests go out
-    #   without apikey (free per-IP tier).
+    # @param api_key [String] required. The same key works across all three
+    #   services. A missing or blank key raises ValidationError before any
+    #   request is made.
     # @param timeout [Numeric] request timeout in seconds.
-    def initialize(api_key: nil, timeout: DEFAULT_TIMEOUT)
-      @api_key = api_key
+    def initialize(api_key:, timeout: DEFAULT_TIMEOUT)
+      key = api_key.to_s
+      raise ValidationError.new("api_key is required", status: 422) if key.strip.empty?
+
+      @api_key = key
       @timeout = timeout
     end
 
@@ -90,7 +94,7 @@ module Demografix
     end
 
     # Build the query string: name=<v> for a single call, repeated name[]=<v>
-    # for a batch. country_id and apikey are added only when set.
+    # for a batch. apikey is always sent; country_id is added only when set.
     def build_query(names, country_id:, batch:)
       params = []
       if batch
@@ -99,7 +103,7 @@ module Demografix
         params << ["name", names.first.to_s]
       end
       params << ["country_id", country_id.to_s] if country_id
-      params << ["apikey", @api_key.to_s] if @api_key
+      params << ["apikey", @api_key]
       URI.encode_www_form(params)
     end
 

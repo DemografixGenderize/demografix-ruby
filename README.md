@@ -1,8 +1,7 @@
 # demografix (Ruby)
 
-The official Ruby client for the Demografix APIs. One client predicts gender, age, and nationality from
-names across genderize.io, agify.io, and nationalize.io, and reports the remaining quota carried on every
-response.
+Run demographic analysis over names — predicted gender, age, and nationality — from one Ruby client. The
+gem covers genderize.io, agify.io, and nationalize.io.
 
 ## Install
 
@@ -20,6 +19,11 @@ gem install demografix
 
 The client uses the Ruby standard library (`net/http` and `json`) and has no runtime dependencies. It requires Ruby 3.2 or later.
 
+## Authentication
+
+An API key is required. Creating one is free and includes 2,500 requests per month. Generate a key in your
+dashboard at genderize.io, agify.io, or nationalize.io. One key works across all three services.
+
 ## Quickstart
 
 Construct a client, run a batch over a list of names, read the predictions, and read the remaining quota.
@@ -27,7 +31,7 @@ Construct a client, run a batch over a list of names, read the predictions, and 
 ```ruby
 require "demografix"
 
-client = Demografix::Client.new(api_key: ENV["DEMOGRAFIX_API_KEY"]) # api_key is optional
+client = Demografix::Client.new(api_key: ENV.fetch("DEMOGRAFIX_API_KEY"))
 
 names = %w[michael matthew jane emily peter lois]
 
@@ -186,7 +190,7 @@ end
 | `nationalize(name)` | `NationalizeResult` | no |
 | `nationalize_batch(names)` | `Batch` of `NationalizePrediction` | no |
 
-`Demografix::Client.new` accepts `api_key:` (optional) and `timeout:` (optional, default 10 seconds). The
+`Demografix::Client.new` requires `api_key:` and accepts `timeout:` (optional, default 10 seconds). The
 host URLs and the User-Agent are fixed constants, not options.
 
 Full API reference: https://genderize.io/documentation/api

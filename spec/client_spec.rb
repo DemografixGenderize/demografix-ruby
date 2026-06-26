@@ -3,7 +3,7 @@
 require "json"
 
 RSpec.describe Demografix::Client do
-  subject(:client) { described_class.new }
+  subject(:client) { described_class.new(api_key: "test-key") }
 
   def stub_ok(host, body, headers: RATE_LIMIT_HEADERS)
     stub_request(:get, /#{Regexp.escape(host)}/)
@@ -43,7 +43,7 @@ RSpec.describe Demografix::Client do
       client.genderize("peter")
 
       expect(a_request(:get, "https://api.genderize.io/")
-        .with(query: { "name" => "peter" },
+        .with(query: { "name" => "peter", "apikey" => "test-key" },
               headers: { "User-Agent" => "demografix-ruby/0.1.0" })).to have_been_made
     end
   end
@@ -104,7 +104,7 @@ RSpec.describe Demografix::Client do
 
       client.agify_batch(%w[michael matthew])
 
-      expect(a_request(:get, "https://api.agify.io/?name[]=michael&name[]=matthew"))
+      expect(a_request(:get, "https://api.agify.io/?name[]=michael&name[]=matthew&apikey=test-key"))
         .to have_been_made
     end
   end
@@ -153,7 +153,7 @@ RSpec.describe Demografix::Client do
       expect(result.country_id).to eq("US")
       expect(result.gender).to eq("female")
       expect(a_request(:get, "https://api.genderize.io/")
-        .with(query: { "name" => "kim", "country_id" => "US" })).to have_been_made
+        .with(query: { "name" => "kim", "country_id" => "US", "apikey" => "test-key" })).to have_been_made
     end
 
     it "carries country_id on agify batches" do
@@ -162,7 +162,7 @@ RSpec.describe Demografix::Client do
 
       client.agify_batch(%w[kim], country_id: "us")
 
-      expect(a_request(:get, "https://api.agify.io/?name[]=kim&country_id=us"))
+      expect(a_request(:get, "https://api.agify.io/?name[]=kim&country_id=us&apikey=test-key"))
         .to have_been_made
     end
   end
@@ -239,19 +239,17 @@ RSpec.describe Demografix::Client do
   # apikey ----------------------------------------------------------------------
 
   describe "api key" do
-    it "omits apikey when no key is configured" do
+    it "always sends the apikey query parameter" do
       stub_ok("api.genderize.io",
               { "name" => "peter", "gender" => "male", "probability" => 1.0, "count" => 1 })
 
       client.genderize("peter")
 
       expect(a_request(:get, "https://api.genderize.io/")
-        .with(query: hash_including("name" => "peter"))).to have_been_made
-      expect(a_request(:get, "https://api.genderize.io/")
-        .with(query: hash_including("apikey"))).not_to have_been_made
+        .with(query: hash_including("apikey" => "test-key"))).to have_been_made
     end
 
-    it "appends apikey when a key is configured" do
+    it "sends the configured key as apikey" do
       keyed = described_class.new(api_key: "SECRET")
       stub_ok("api.genderize.io",
               { "name" => "peter", "gender" => "male", "probability" => 1.0, "count" => 1 })
@@ -260,6 +258,20 @@ RSpec.describe Demografix::Client do
 
       expect(a_request(:get, "https://api.genderize.io/")
         .with(query: { "name" => "peter", "apikey" => "SECRET" })).to have_been_made
+    end
+
+    it "raises ValidationError when constructed with a missing or blank key, making no HTTP call" do
+      stub = stub_request(:get, /api\.genderize\.io/)
+
+      [nil, "", "   "].each do |bad|
+        expect { described_class.new(api_key: bad) }
+          .to raise_error(Demografix::ValidationError, /api_key is required/)
+      end
+
+      # Fully omitting the keyword raises Ruby's native missing-argument error.
+      expect { described_class.new }.to raise_error(ArgumentError)
+
+      expect(stub).not_to have_been_requested
     end
   end
 end
