@@ -45,8 +45,7 @@ ages.quota.remaining # => 24987
 ```
 
 Each call returns prediction fields plus a `quota`. Batch calls return `results` (one prediction per input
-name, in input order) plus one `quota` for the response. Aggregate the results into a distribution; the
-client is built to summarize a list, not to label an individual.
+name, in input order) plus one `quota` for the response. Aggregate the results into a distribution.
 
 ## genderize
 
